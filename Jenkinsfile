@@ -1,52 +1,50 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'mcr.microsoft.com/dotnet/sdk:7.0' // или по-нова версия
+            args '-v /tmp:/tmp' // опционално: монтиране на временна директория
+            reuseNode true // използва същия работен нод за всички стейджове
+        }
+    }
 
     environment {
-        DOTNET_CLI_TELEMETRY_OPTOUT = '1' // Optional: Disables .NET CLI telemetry
+        DOTNET_CLI_TELEMETRY_OPTOUT = '1'
+        DOTNET_NOLOGO = 'true'
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                checkout scm // извлича кода от source control
+            }
+        }
+
         stage('Restore') {
             steps {
-                script {
-                    echo 'Restoring NuGet packages...'
-                    bat 'dotnet restore' // For Windows agents
-                    // If using Linux agent, use: sh 'dotnet restore'
-                }
+                sh 'dotnet restore'
             }
         }
 
         stage('Build') {
             steps {
-                script {
-                    echo 'Building the project...'
-                    bat 'dotnet build --configuration Release --no-restore'
-                    // For Linux: sh 'dotnet build --configuration Release --no-restore'
-                }
+                sh 'dotnet build --configuration Release --no-restore'
             }
         }
 
         stage('Test') {
             steps {
-                script {
-                    echo 'Running tests...'
-                    bat 'dotnet test --no-restore --verbosity normal'
-                    // For Linux: sh 'dotnet test --no-restore --verbosity normal'
-                }
+                sh 'dotnet test --no-restore --verbosity normal'
+                // За код покритие:
+                // sh 'dotnet test --collect:"XPlat Code Coverage"'
             }
         }
     }
 
     post {
         always {
-            echo 'Pipeline completed - cleaning up'
-            // Optional: Add cleanup steps here
-        }
-        success {
-            echo 'Pipeline succeeded!'
-        }
-        failure {
-            echo 'Pipeline failed!'
+            junit '**/TestResults/*.xml' // ако тестовете генерират JUnit репорти
+            // archiveArtifacts artifacts: '**/bin/Release/**/*.dll', fingerprint: true
+            cleanWs() // почиства работното пространство
         }
     }
 }
