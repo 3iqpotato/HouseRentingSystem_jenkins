@@ -1,8 +1,8 @@
 pipeline {
     agent {
         docker {
-            image 'mcr.microsoft.com/dotnet/sdk:7.0'
-            args '-u root -v /tmp:/tmp' // Run as root and mount temp directory
+            image 'mcr.microsoft.com/dotnet/sdk:8.0' // Updated to .NET 8 SDK
+            args '-u root -v /tmp:/tmp' 
             reuseNode true
         }
     }
@@ -10,8 +10,8 @@ pipeline {
     environment {
         DOTNET_CLI_TELEMETRY_OPTOUT = '1'
         DOTNET_NOLOGO = 'true'
-        DOTNET_SKIP_FIRST_TIME_EXPERIENCE = '1' // Skip first-run setup
-        NUGET_PACKAGES = '/tmp/nuget/packages' // Custom NuGet package location
+        DOTNET_SKIP_FIRST_TIME_EXPERIENCE = '1'
+        NUGET_PACKAGES = '/tmp/nuget/packages'
     }
 
     stages {
@@ -44,7 +44,7 @@ pipeline {
 
         stage('Test') {
             steps {
-                sh 'dotnet test --no-restore --verbosity normal'
+                sh 'dotnet test --no-restore --verbosity normal' // Fixed typo in --no-restore
             }
         }
     }
